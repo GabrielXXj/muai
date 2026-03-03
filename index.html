@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MegaMU Boss Tracker</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #0f172a;
+        color: #e2e8f0;
+        font-family: monospace;
+        min-height: 100vh;
+      }
+
+      header {
+        background: linear-gradient(90deg, #1e1b4b, #0f172a);
+        border-bottom: 1px solid #334155;
+        padding: 16px 24px;
+      }
+      .header-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      h1 {
+        font-size: 22px;
+        color: #a78bfa;
+        letter-spacing: 2px;
+      }
+      .subtitle {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 4px;
+      }
+      .badge-avail {
+        background: #16a34a;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: bold;
+      }
+      .btn-refresh {
+        background: #4f46e5;
+        border: none;
+        color: #fff;
+        padding: 6px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12px;
+        font-family: monospace;
+      }
+      .btn-refresh:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .controls {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      select {
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-family: monospace;
+      }
+
+      .error-bar {
+        background: #7f1d1d;
+        padding: 8px 24px;
+        font-size: 12px;
+        color: #fca5a5;
+      }
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: #64748b;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        padding: 16px 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      thead tr {
+        background: #1e293b;
+        border-bottom: 2px solid #334155;
+      }
+      th {
+        padding: 8px 12px;
+        text-align: left;
+        color: #94a3b8;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      tbody tr {
+        border-bottom: 1px solid #1e293b;
+        transition: background 0.2s;
+      }
+      tbody tr:nth-child(even) {
+        background: #111827;
+      }
+      tbody tr:hover {
+        background: #1e293b !important;
+      }
+      td {
+        padding: 7px 12px;
+        white-space: nowrap;
+      }
+
+      .sv-badge {
+        background: #1e293b;
+        border: 1px solid #334155;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+      }
+      .cd {
+        font-size: 14px;
+        font-weight: bold;
+      }
+      .cd-avail {
+        color: #4ade80;
+        animation: pulse 1.5s infinite;
+      }
+      .cd-soon {
+        color: #fb923c;
+      }
+      .cd-close {
+        color: #fde047;
+      }
+      .cd-far {
+        color: #cbd5e1;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .btn-edit {
+        background: transparent;
+        border: 1px solid #334155;
+        color: #64748b;
+        padding: 2px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      .btn-save {
+        background: #16a34a;
+        border: none;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        margin-right: 3px;
+      }
+      .btn-cancel {
+        background: #64748b;
+        border: none;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      input[type="datetime-local"] {
+        background: #1e293b;
+        border: 1px solid #6366f1;
+        color: #e2e8f0;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-family: monospace;
+      }
+
+      .legend {
+        padding: 12px 16px;
+        border-top: 1px solid #1e293b;
+        font-size: 11px;
+        color: #475569;
+      }
+      .legend strong {
+        color: #64748b;
+      }
+      .disclaimer {
+        padding: 0 16px 16px;
+        font-size: 10px;
+        color: #334155;
+      }
+      .empty {
+        padding: 24px;
+        text-align: center;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-top">
+        <div>
+          <h1>⚔ MEGAMU BOSS TRACKER</h1>
+          <p class="subtitle" id="subtitle">Carregando...</p>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center">
+          <span
+            class="badge-avail"
+            id="badge-avail"
+            style="display: none"
+          ></span>
+          <button class="btn-refresh" id="btn-refresh" onclick="fetchLog()">
+            🔄 Atualizar
+          </button>
+        </div>
+      </div>
+      <div class="controls">
+        <select id="filter-boss" onchange="render()">
+          <option value="Todos">Todos os Bosses</option>
+          <option>Lord Silvester</option>
+          <option>Lord of Ferea</option>
+          <option>God of Darkness</option>
+          <option>Core Magriffy</option>
+          <option>Nix</option>
+          <option>Selupan</option>
+          <option>Nightmare</option>
+        </select>
+        <select id="sort-by" onchange="render()">
+          <option value="tempo">Ordenar: Tempo restante</option>
+          <option value="boss">Ordenar: Boss</option>
+          <option value="server">Ordenar: Servidor</option>
+        </select>
+        <span style="font-size: 11px; color: #64748b" id="count-label"></span>
+      </div>
+    </header>
+
+    <div class="error-bar" id="error-bar" style="display: none"></div>
+    <div class="loading" id="loading">⏳ Buscando dados do Boss Log...</div>
+
+    <div class="table-wrap" id="table-wrap" style="display: none">
+      <table>
+        <thead>
+          <tr>
+            <th>Boss</th>
+            <th>Mapa</th>
+            <th>Servidor</th>
+            <th>Último Kill</th>
+            <th>Próximo Respawn</th>
+            <th>Tempo Restante</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="legend" id="legend" style="display: none">
+      <strong>Tempos de Respawn:</strong>
+      <span style="color: #c084fc">● Lord Silvester: 93h08min</span> &nbsp;
+      <span style="color: #f97316">● Lord of Ferea: 96h07min</span> &nbsp;
+      <span style="color: #6366f1">● God of Darkness: 103h49min</span> &nbsp;
+      <span style="color: #10b981">● Core Magriffy: 84h36min</span> &nbsp;
+      <span style="color: #06b6d4">● Nix: 101h24min</span> &nbsp;
+      <span style="color: #f43f5e">● Selupan: ~66h</span> &nbsp;
+      <span style="color: #eab308">● Nightmare: ~48h</span>
+    </div>
+    <div class="disclaimer" id="disclaimer" style="display: none">
+      ⚠ Selupan (~66h) e Nightmare (~48h) são estimativas. Use ✏️ para corrigir
+      o horário do último kill manualmente.
+    </div>
+
+    <script>
+      const SERVERS = [
+        "Sv1",
+        "Sv2",
+        "Sv3",
+        "Sv4",
+        "Sv5",
+        "Sv6",
+        "Sv7",
+        "Sv8",
+        "Sv11",
+        "Sv12",
+        "Sv14",
+        "Sv15",
+        "Sv16",
+        "Sv17",
+        "Sv18",
+        "Sv19",
+      ];
+
+      const RESPAWN_H = {
+        "Lord Silvester": 93 + 8 / 60,
+        "Lord of Ferea": 96 + 7 / 60,
+        "God of Darkness": 103 + 49 / 60,
+        "Core Magriffy": 84 + 36 / 60,
+        Nix: 101 + 24 / 60,
+        Selupan: 66,
+        Nightmare: 48,
+      };
+
+      const BOSS_COLOR = {
+        "Lord Silvester": "#c084fc",
+        "Lord of Ferea": "#f97316",
+        "God of Darkness": "#6366f1",
+        "Core Magriffy": "#10b981",
+        Nix: "#06b6d4",
+        Selupan: "#f43f5e",
+        Nightmare: "#eab308",
+      };
+
+      const BOSS_MAP = {
+        "Lord Silvester": "Urk Mountain",
+        "Lord of Ferea": "Ferea",
+        "God of Darkness": "Swamp of Darkness",
+        "Core Magriffy": "Nars",
+        Nix: "Nixies Lake",
+        Selupan: "Raklion",
+        Nightmare: "Kanturu",
+      };
+
+      const BOSS_NAMES = Object.keys(RESPAWN_H);
+
+      let lastKillMap = {};
+      let manualOverrides = {};
+      let editKey = null;
+
+      function parseBossLog(html) {
+        const rows = [];
+        const re =
+          /<tr>\s*<td[^>]*>([\d\/]+ [\d:]+)<\/td>\s*<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>([^<]+)<\/td>\s*<td[^>]*>(Sv\w+)<\/td>/g;
+        let m;
+        while ((m = re.exec(html)) !== null) {
+          const boss = m[2].trim();
+          if (!RESPAWN_H[boss]) continue;
+          const sv = m[4].trim();
+          if (!SERVERS.includes(sv)) continue;
+          const [dd, mo, yy] = m[1].split(" ")[0].split("/");
+          const t = m[1].split(" ")[1];
+          const dt = new Date(`${yy}-${mo}-${dd}T${t}-03:00`);
+          rows.push({ boss, sv, time: dt });
+        }
+        return rows;
+      }
+
+      function buildMap(rows) {
+        const map = {};
+        rows.forEach((r) => {
+          const k = `${r.boss}|${r.sv}`;
+          if (!map[k] || r.time > map[k]) map[k] = r.time;
+        });
+        return map;
+      }
+
+      async function fetchLog() {
+        const btn = document.getElementById("btn-refresh");
+        btn.disabled = true;
+        btn.textContent = "⏳";
+        try {
+          const url =
+            "https://api.allorigins.win/raw?url=" +
+            encodeURIComponent("https://en.megamu.net/boss-log");
+          const res = await fetch(url);
+          const html = await res.text();
+          lastKillMap = buildMap(parseBossLog(html));
+          document.getElementById("error-bar").style.display = "none";
+          document.getElementById("subtitle").textContent =
+            "Atualizado: " +
+            new Date().toLocaleTimeString("pt-BR") +
+            " · Auto-refresh: 5min";
+        } catch (e) {
+          const bar = document.getElementById("error-bar");
+          bar.textContent = "⚠ Erro ao buscar dados. Usando cache anterior.";
+          bar.style.display = "block";
+        }
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("table-wrap").style.display = "block";
+        document.getElementById("legend").style.display = "block";
+        document.getElementById("disclaimer").style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "🔄 Atualizar";
+        render();
+      }
+
+      function formatDate(dt) {
+        return dt.toLocaleString("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function formatCD(ms) {
+        if (ms <= 0) return { text: "DISPONÍVEL", cls: "cd cd-avail" };
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        const s = Math.floor((ms % 60000) / 1000);
+        const txt = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+        if (h < 2) return { text: txt, cls: "cd cd-soon" };
+        if (h < 6) return { text: txt, cls: "cd cd-close" };
+        return { text: txt, cls: "cd cd-far" };
+      }
+
+      function buildRows() {
+        const now = Date.now();
+        const rows = [];
+        BOSS_NAMES.forEach((boss) => {
+          SERVERS.forEach((sv) => {
+            const k = `${boss}|${sv}`;
+            const lastKill = manualOverrides[k] || lastKillMap[k];
+            if (!lastKill) return;
+            const respawn = new Date(
+              lastKill.getTime() + RESPAWN_H[boss] * 3600000,
+            );
+            rows.push({
+              boss,
+              sv,
+              lastKill,
+              respawn,
+              msLeft: respawn - now,
+              k,
+            });
+          });
+        });
+        return rows;
+      }
+
+      function render() {
+        const now = Date.now();
+        const filterBoss = document.getElementById("filter-boss").value;
+        const sortBy = document.getElementById("sort-by").value;
+
+        let rows = buildRows();
+        if (filterBoss !== "Todos")
+          rows = rows.filter((r) => r.boss === filterBoss);
+
+        rows.sort((a, b) => {
+          if (sortBy === "tempo") return a.msLeft - b.msLeft;
+          if (sortBy === "boss")
+            return a.boss.localeCompare(b.boss) || a.sv.localeCompare(b.sv);
+          if (sortBy === "server")
+            return a.sv.localeCompare(b.sv) || a.boss.localeCompare(b.boss);
+          return 0;
+        });
+
+        const avail = rows.filter((r) => r.msLeft <= 0).length;
+        const badge = document.getElementById("badge-avail");
+        if (avail > 0) {
+          badge.style.display = "inline";
+          badge.textContent = `🟢 ${avail} DISPONÍVEL${avail > 1 ? "IS" : ""}`;
+        } else badge.style.display = "none";
+
+        document.getElementById("count-label").textContent =
+          rows.length + " entradas";
+
+        const tbody = document.getElementById("tbody");
+        if (rows.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="empty">Nenhum dado encontrado.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = rows
+          .map(({ boss, sv, lastKill, respawn, msLeft, k }) => {
+            const cd = formatCD(msLeft);
+            const col = BOSS_COLOR[boss];
+            const isEdit = editKey === k;
+
+            const killCell = isEdit
+              ? `<input type="datetime-local" id="edit-input" value="${toLocalInput(lastKill)}" />`
+              : `<span style="color:#94a3b8;font-size:11px">${formatDate(lastKill)}</span>`;
+
+            const actionCell = isEdit
+              ? `<button class="btn-save" onclick="saveEdit('${k}')">✓</button><button class="btn-cancel" onclick="cancelEdit()">✗</button>`
+              : `<button class="btn-edit" onclick="startEdit('${k}','${lastKill.toISOString()}')" title="Corrigir horário">✏️</button>`;
+
+            return `<tr>
+      <td><span style="color:${col};font-weight:bold">● ${boss}</span></td>
+      <td style="color:#64748b;font-size:11px">${BOSS_MAP[boss]}</td>
+      <td><span class="sv-badge">${sv}</span></td>
+      <td>${killCell}</td>
+      <td style="color:#94a3b8;font-size:11px">${formatDate(respawn)}</td>
+      <td><span class="${cd.cls}">${cd.text}</span></td>
+      <td>${actionCell}</td>
+    </tr>`;
+          })
+          .join("");
+      }
+
+      function toLocalInput(dt) {
+        const d = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000);
+        return d.toISOString().slice(0, 16);
+      }
+
+      function startEdit(k, isoStr) {
+        editKey = k;
+        render();
+      }
+
+      function saveEdit(k) {
+        const inp = document.getElementById("edit-input");
+        if (!inp) return;
+        manualOverrides[k] = new Date(inp.value);
+        editKey = null;
+        render();
+      }
+
+      function cancelEdit() {
+        editKey = null;
+        render();
+      }
+
+      // Tick a cada segundo
+      setInterval(() => {
+        if (editKey === null) render();
+      }, 1000);
+
+      // Auto-refresh a cada 5 minutos
+      setInterval(fetchLog, 5 * 60 * 1000);
+
+      // Inicia
+      fetchLog();
+    </script>
+  </body>
+</html>
